@@ -195,13 +195,13 @@ if geom=='point':
     if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
         query_geom='footprint:\\"Intersects(%f,%f)\\"'%(options.lat,options.lon)
     else :
-        query_geom='footprint:"Intersects(%f,%f)"'%(options.lat,options.lon)
+        query_geom='footprint:\\"Intersects(%f,%f)\\"'%(options.lat,options.lon)
 	
 elif geom=='rectangle':
     if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
         query_geom='footprint:\\"Intersects(POLYGON(({lonmin} {latmin}, {lonmax} {latmin}, {lonmax} {latmax}, {lonmin} {latmax},{lonmin} {latmin})))\\"'.format(latmin=options.latmin,latmax=options.latmax,lonmin=options.lonmin,lonmax=options.lonmax)
     else :
-        query_geom='footprint:"Intersects(POLYGON(({lonmin} {latmin}, {lonmax} {latmin}, {lonmax} {latmax}, {lonmin} {latmax},{lonmin} {latmin})))"'.format(latmin=options.latmin,latmax=options.latmax,lonmin=options.lonmin,lonmax=options.lonmax)
+        query_geom='footprint:\\"Intersects(POLYGON(({lonmin} {latmin}, {lonmax} {latmin}, {lonmax} {latmax}, {lonmin} {latmax},{lonmin} {latmin})))\\"'.format(latmin=options.latmin,latmax=options.latmax,lonmin=options.lonmin,lonmax=options.lonmax)
     
 
 if options.orbit==None:
@@ -221,12 +221,22 @@ else:
 
 commande_wget='%s %s %s "%s%s&rows=%d"'%(wg,auth,search_output,url_search,query,options.MaxRecords)
 print commande_wget
+
+f = open('cmt.txt', 'w')
+f.write(commande_wget)
+f.close()
+
+
 os.system(commande_wget)
 
 
 #=======================
 # parse catalog output
 #=======================
+
+p = 0
+
+
 xml=minidom.parse("query_results.xml")
 products=xml.getElementsByTagName("entry")
 for prod in products:
@@ -278,6 +288,7 @@ for prod in products:
 	    #do not download the product if it was already downloaded and unzipped, or if no_download option was selected.
 	    unzipped_file_exists= os.path.exists(("%s/%s")%(options.write_dir,filename))
 	    print commande_wget
+	    p += 1
 	    if unzipped_file_exists==False and options.no_download==False:
 		os.system(commande_wget)
 	    else :
@@ -369,3 +380,16 @@ for prod in products:
 
 	else :
 	    print "too many clouds to download this product" 
+
+		
+if len(products) > 1:
+	nprod = "scenes"
+else :
+	nprod = "scene"
+
+if p > 1:
+	nprodDL = "scenes are"
+else :
+	nprodDL = "scene is"
+
+print 'Total of %d %s found -- %d %s ready for download with specified criteria.' % (len(products),nprod,p,nprodDL)
